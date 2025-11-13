@@ -2,16 +2,21 @@
 
 // Home Page - Zone management and list
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 export default function HomePage() {
+  const { data: session } = useSession();
   const [zones, setZones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadZones();
-  }, []);
+    if (session) {
+      loadZones();
+    }
+  }, [session]);
 
   const loadZones = async () => {
     try {
@@ -47,15 +52,7 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="header">
-        <div className="container">
-          <h1>SmartBoitage PRO</h1>
-          <p style={{ color: '#666', marginTop: '5px' }}>
-            Gestion professionnelle de tournées de distribution
-          </p>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="container">
         {/* Actions */}

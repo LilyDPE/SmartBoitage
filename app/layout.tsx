@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { useEffect } from 'react';
+import SessionProvider from '@/components/SessionProvider';
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'SmartBoitage PRO',
@@ -19,11 +22,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="fr">
       <head>
@@ -31,29 +36,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        <ServiceWorkerRegistration />
-        {children}
+        <SessionProvider session={session}>
+          <ServiceWorkerRegistration />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
-}
-
-// Service Worker Registration Component
-function ServiceWorkerRegistration() {
-  if (typeof window !== 'undefined') {
-    useEffect(() => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker
-          .register('/service-worker.js')
-          .then((registration) => {
-            console.log('Service Worker registered:', registration);
-          })
-          .catch((error) => {
-            console.error('Service Worker registration failed:', error);
-          });
-      }
-    }, []);
-  }
-
-  return null;
 }
