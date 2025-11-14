@@ -19,7 +19,7 @@ export default function HistoryPage() {
   const [zoneId, setZoneId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [limit, setLimit] = useState(50);
+  const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
 
   // Available users and zones for filters
