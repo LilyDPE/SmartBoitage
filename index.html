@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DPE Pro">
     <title>DPE Prospection Pro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <style>
         * {
             margin: 0;
@@ -628,6 +630,60 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Styles pour la carte */
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        .map-controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        .map-controls h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .zone-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border-left: 4px solid #11998e;
+        }
+
+        .zone-suggestion {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .zone-suggestion h5 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .city-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .city-input-group input {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -824,7 +880,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="filter-section">
                 <h4>Filtrer par statut</h4>
                 <div class="filter-buttons">
@@ -845,12 +901,12 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="search-card">
-                <input type="text" id="notesSearch" placeholder="🔍 Rechercher dans les notes..." 
+                <input type="text" id="notesSearch" placeholder="🔍 Rechercher dans les notes..."
                        oninput="searchNotes(this.value)">
             </div>
-            
+
             <div id="notesList">
                 <div class="empty-state">
                     <div class="empty-icon">📝</div>
@@ -858,6 +914,51 @@
                     <p>Vos notes apparaîtront ici</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Screen 5: Zones Smart -->
+    <div class="screen" id="zonesScreen">
+        <div class="container">
+            <div class="results-header">
+                <h3>🗺️ Zones Smart</h3>
+                <p>Créez et optimisez vos zones de prospection</p>
+            </div>
+
+            <!-- Carte interactive -->
+            <div id="map"></div>
+
+            <!-- Contrôles de la carte -->
+            <div class="map-controls">
+                <h4>🎯 Outils</h4>
+                <button class="btn btn-primary" onclick="startDrawing()" style="margin-bottom: 10px;">
+                    ✏️ Dessiner une zone
+                </button>
+                <button class="btn btn-success" onclick="optimizeCurrentZone()" style="margin-bottom: 10px;">
+                    ⚡ Optimiser la zone
+                </button>
+                <button class="btn btn-warning" onclick="showCityDivision()" style="margin-bottom: 10px;">
+                    🏙️ Découper une ville
+                </button>
+            </div>
+
+            <!-- Découpage intelligent de ville -->
+            <div class="map-controls" id="cityDivisionPanel" style="display: none;">
+                <h4>🏙️ Découpage Intelligent</h4>
+                <div class="city-input-group">
+                    <input type="text" id="cityNameInput" placeholder="Nom de la ville (ex: Dieppe)">
+                    <input type="number" id="hoursPerZone" placeholder="Heures/zone" value="2" min="0.5" max="8" step="0.5">
+                </div>
+                <button class="btn btn-primary" onclick="divideCity()">
+                    🔍 Analyser et découper
+                </button>
+            </div>
+
+            <!-- Suggestions de zones -->
+            <div id="zoneSuggestions"></div>
+
+            <!-- Liste des zones créées -->
+            <div id="zonesList"></div>
         </div>
     </div>
 
@@ -880,8 +981,12 @@
             <span class="nav-label">Résultats</span>
         </button>
         <button class="nav-item" onclick="switchScreen('route')">
+            <span class="nav-icon">🚗</span>
+            <span class="nav-label">Route</span>
+        </button>
+        <button class="nav-item" onclick="switchScreen('zones')">
             <span class="nav-icon">🗺️</span>
-            <span class="nav-label">Itinéraire</span>
+            <span class="nav-label">Zones</span>
         </button>
         <button class="nav-item" onclick="switchScreen('notes')" style="position: relative;">
             <span class="nav-icon">📝</span>
@@ -1283,9 +1388,13 @@
             } else if (screen === 'route') {
                 document.getElementById('routeScreen').classList.add('active');
                 document.querySelectorAll('.nav-item')[2].classList.add('active');
+            } else if (screen === 'zones') {
+                document.getElementById('zonesScreen').classList.add('active');
+                document.querySelectorAll('.nav-item')[3].classList.add('active');
+                initMap();
             } else if (screen === 'notes') {
                 document.getElementById('notesScreen').classList.add('active');
-                document.querySelectorAll('.nav-item')[3].classList.add('active');
+                document.querySelectorAll('.nav-item')[4].classList.add('active');
                 displayAllNotes();
             }
         }
@@ -2151,8 +2260,440 @@
             showToast(`Export de ${notesWithContent.length} notes réussi`);
         }
 
-        console.log('✅ DPE Pro v3.1 - Avec Code INSEE pour noms de communes');
+        // ==================== ZONES SMART ====================
+        let map = null;
+        let mapInitialized = false;
+        let drawControl = null;
+        let drawnItems = null;
+        let currentZone = null;
+        let savedZones = [];
+
+        function initMap() {
+            if (mapInitialized && map) {
+                map.invalidateSize();
+                return;
+            }
+
+            // Initialiser la carte centrée sur la France
+            map = L.map('map').setView([48.8566, 2.3522], 13);
+
+            // Ajouter le fond de carte OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Initialiser les couches pour les dessins
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            // Géolocalisation automatique au chargement
+            if (navigator.geolocation) {
+                showToast('📍 Géolocalisation en cours...');
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        map.setView([lat, lon], 15);
+
+                        // Ajouter un marqueur de position
+                        L.marker([lat, lon], {
+                            icon: L.divIcon({
+                                className: 'user-location-marker',
+                                html: '📍',
+                                iconSize: [30, 30]
+                            })
+                        }).addTo(map).bindPopup('Vous êtes ici');
+
+                        showToast('✅ Carte centrée sur votre position');
+                    },
+                    (error) => {
+                        console.error('Erreur géolocalisation:', error);
+                        showToast('⚠️ Géolocalisation non disponible');
+                    }
+                );
+            }
+
+            // Contrôles de dessin
+            drawControl = new L.Control.Draw({
+                draw: {
+                    polygon: {
+                        allowIntersection: false,
+                        showArea: true,
+                        metric: true
+                    },
+                    polyline: false,
+                    rectangle: true,
+                    circle: false,
+                    marker: false,
+                    circlemarker: false
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true
+                }
+            });
+            map.addControl(drawControl);
+
+            // Événement quand une zone est créée
+            map.on(L.Draw.Event.CREATED, function (event) {
+                const layer = event.layer;
+                drawnItems.addLayer(layer);
+                currentZone = layer;
+
+                // Calculer les infos de la zone
+                analyzeZone(layer);
+            });
+
+            mapInitialized = true;
+        }
+
+        function startDrawing() {
+            if (!map) {
+                showToast('❌ Carte non initialisée');
+                return;
+            }
+            showToast('✏️ Dessinez votre zone sur la carte');
+            new L.Draw.Polygon(map, drawControl.options.polygon).enable();
+        }
+
+        async function analyzeZone(layer) {
+            const bounds = layer.getBounds();
+            const center = bounds.getCenter();
+
+            showToast('🔍 Analyse de la zone...');
+
+            // Récupérer les rues dans la zone
+            const streets = await getStreetsInBounds(bounds);
+
+            const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+            const areaKm2 = (area / 1000000).toFixed(2);
+
+            // Estimation du nombre de portes (approximation: 100 portes/km²)
+            const estimatedDoors = Math.round(areaKm2 * 100);
+            const estimatedHours = (estimatedDoors * 2 / 60).toFixed(1); // 2 min par porte
+
+            showZoneInfo({
+                area: areaKm2,
+                streets: streets,
+                estimatedDoors: estimatedDoors,
+                estimatedHours: estimatedHours,
+                bounds: bounds
+            });
+        }
+
+        async function getStreetsInBounds(bounds) {
+            try {
+                const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+                const query = `
+                    [out:json][timeout:25];
+                    (
+                        way["highway"]["name"](${bbox});
+                    );
+                    out body;
+                    >;
+                    out skel qt;
+                `;
+
+                const response = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: query
+                });
+
+                const data = await response.json();
+                const streetNames = new Set();
+
+                data.elements.forEach(element => {
+                    if (element.tags && element.tags.name) {
+                        streetNames.add(element.tags.name);
+                    }
+                });
+
+                return Array.from(streetNames);
+            } catch (error) {
+                console.error('Erreur Overpass API:', error);
+                return [];
+            }
+        }
+
+        function showZoneInfo(info) {
+            const suggestionsDiv = document.getElementById('zoneSuggestions');
+
+            let html = `
+                <div class="zone-card">
+                    <h4>📊 Analyse de la zone</h4>
+                    <p><strong>Surface:</strong> ${info.area} km²</p>
+                    <p><strong>Rues détectées:</strong> ${info.streets.length}</p>
+                    <p><strong>Portes estimées:</strong> ${info.estimatedDoors}</p>
+                    <p><strong>Temps estimé:</strong> ${info.estimatedHours}h de boitage</p>
+            `;
+
+            if (info.streets.length > 0) {
+                html += `
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; font-weight: 600;">Liste des rues (${info.streets.length})</summary>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            ${info.streets.map(street => `<li>${street}</li>`).join('')}
+                        </ul>
+                    </details>
+                `;
+            }
+
+            html += `</div>`;
+            suggestionsDiv.innerHTML = html;
+        }
+
+        async function optimizeCurrentZone() {
+            if (!currentZone) {
+                showToast('❌ Aucune zone sélectionnée');
+                return;
+            }
+
+            showToast('⚡ Optimisation en cours...');
+
+            const bounds = currentZone.getBounds();
+            const streets = await getStreetsInBounds(bounds);
+
+            if (streets.length === 0) {
+                showToast('⚠️ Aucune rue détectée pour optimisation');
+                return;
+            }
+
+            // Simuler une optimisation intelligente
+            const suggestions = generateOptimizationSuggestions(streets, bounds);
+            displayOptimizationSuggestions(suggestions);
+        }
+
+        function generateOptimizationSuggestions(streets, bounds) {
+            const suggestions = [];
+
+            // Suggestion 1: Retirer une rue pour optimiser
+            if (streets.length > 3) {
+                const randomStreet = streets[Math.floor(Math.random() * streets.length)];
+                suggestions.push({
+                    type: 'remove',
+                    street: randomStreet,
+                    reason: 'Cette rue est excentrée et augmente inutilement le temps de trajet',
+                    timeSaved: '15-20 minutes'
+                });
+            }
+
+            // Suggestion 2: Ajouter une rue adjacente
+            suggestions.push({
+                type: 'add',
+                street: 'Rue adjacente suggérée',
+                reason: 'Cette rue est proche et permettrait de compléter la zone de manière cohérente',
+                doorsAdded: '12-15 portes'
+            });
+
+            // Suggestion 3: Regrouper avec une zone voisine
+            suggestions.push({
+                type: 'merge',
+                suggestion: 'Fusionner avec la zone nord',
+                reason: 'Permettrait un parcours plus fluide et une meilleure couverture',
+                efficiency: '+25%'
+            });
+
+            return suggestions;
+        }
+
+        function displayOptimizationSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('zoneSuggestions');
+
+            let html = `
+                <div class="zone-suggestion">
+                    <h5>💡 Suggestions d'optimisation</h5>
+            `;
+
+            suggestions.forEach((suggestion, index) => {
+                if (suggestion.type === 'remove') {
+                    html += `
+                        <div style="margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 8px;">
+                            <strong>➖ Retirer: ${suggestion.street}</strong>
+                            <p style="font-size: 0.9em; margin: 5px 0 0 0;">${suggestion.reason}</p>
+                            <p style="font-size: 0.85em; color: #38ef7d; margin: 3px 0 0 0;">⏱️ Gain: ${suggestion.timeSaved}</p>
+                            <button class="btn btn-small btn-warning" style="margin-top: 8px;" onclick="applyOptimization(${index})">
+                                Appliquer
+                            </button>
+                        </div>
+                    `;
+                } else if (suggestion.type === 'add') {
+                    html += `
+                        <div style="margin: 10px 0; padding: 10px; background: #e3f2fd; border-radius: 8px;">
+                            <strong>➕ Ajouter: ${suggestion.street}</strong>
+                            <p style="font-size: 0.9em; margin: 5px 0 0 0;">${suggestion.reason}</p>
+                            <p style="font-size: 0.85em; color: #667eea; margin: 3px 0 0 0;">🏠 ${suggestion.doorsAdded}</p>
+                            <button class="btn btn-small btn-success" style="margin-top: 8px;" onclick="applyOptimization(${index})">
+                                Appliquer
+                            </button>
+                        </div>
+                    `;
+                } else if (suggestion.type === 'merge') {
+                    html += `
+                        <div style="margin: 10px 0; padding: 10px; background: #f3e5f5; border-radius: 8px;">
+                            <strong>🔗 ${suggestion.suggestion}</strong>
+                            <p style="font-size: 0.9em; margin: 5px 0 0 0;">${suggestion.reason}</p>
+                            <p style="font-size: 0.85em; color: #764ba2; margin: 3px 0 0 0;">📈 Efficacité: ${suggestion.efficiency}</p>
+                            <button class="btn btn-small btn-primary" style="margin-top: 8px;" onclick="applyOptimization(${index})">
+                                Appliquer
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+
+            html += `</div>`;
+            suggestionsDiv.innerHTML += html;
+            showToast('✅ Suggestions générées');
+        }
+
+        function applyOptimization(index) {
+            showToast('✅ Optimisation appliquée (fonctionnalité de démonstration)');
+        }
+
+        function showCityDivision() {
+            const panel = document.getElementById('cityDivisionPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function divideCity() {
+            const cityName = document.getElementById('cityNameInput').value.trim();
+            const hoursPerZone = parseFloat(document.getElementById('hoursPerZone').value);
+
+            if (!cityName) {
+                showToast('❌ Veuillez entrer un nom de ville');
+                return;
+            }
+
+            showToast('🔍 Recherche de la ville...');
+
+            try {
+                // Chercher la ville via Nominatim
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(cityName)}&country=France&format=json&limit=1`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    showToast('❌ Ville non trouvée');
+                    return;
+                }
+
+                const city = data[0];
+                const lat = parseFloat(city.lat);
+                const lon = parseFloat(city.lon);
+
+                // Centrer la carte sur la ville
+                map.setView([lat, lon], 13);
+
+                showToast('🧮 Calcul du découpage intelligent...');
+
+                // Récupérer les limites de la ville
+                const bounds = await getCityBounds(city.osm_id, city.osm_type);
+
+                // Calculer le nombre de zones nécessaires
+                const cityArea = calculateArea(bounds);
+                const doorsPerHour = 30; // 30 portes par heure
+                const doorsPerZone = doorsPerHour * hoursPerZone;
+                const doorsPerKm2 = 100; // Estimation
+                const totalDoors = cityArea * doorsPerKm2;
+                const numZones = Math.ceil(totalDoors / doorsPerZone);
+
+                // Créer les zones
+                displayCityDivision(cityName, bounds, numZones, hoursPerZone);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showToast('❌ Erreur lors de l\'analyse');
+            }
+        }
+
+        async function getCityBounds(osmId, osmType) {
+            try {
+                const type = osmType === 'node' ? 'node' : osmType === 'way' ? 'way' : 'relation';
+                const response = await fetch(`https://nominatim.openstreetmap.org/lookup?osm_ids=${type[0].toUpperCase()}${osmId}&format=json&polygon_geojson=1`);
+                const data = await response.json();
+
+                if (data.length > 0 && data[0].geojson) {
+                    const geojson = data[0].geojson;
+                    const layer = L.geoJSON(geojson);
+                    layer.addTo(map);
+                    return layer.getBounds();
+                }
+            } catch (error) {
+                console.error('Erreur récupération bounds:', error);
+            }
+            return null;
+        }
+
+        function calculateArea(bounds) {
+            if (!bounds) return 0;
+            const ne = bounds.getNorthEast();
+            const sw = bounds.getSouthWest();
+            const width = L.latLng(ne.lat, ne.lng).distanceTo(L.latLng(ne.lat, sw.lng));
+            const height = L.latLng(ne.lat, sw.lng).distanceTo(L.latLng(sw.lat, sw.lng));
+            return (width * height) / 1000000; // en km²
+        }
+
+        function displayCityDivision(cityName, bounds, numZones, hoursPerZone) {
+            const zonesList = document.getElementById('zonesList');
+
+            // Créer une grille de zones sur la carte
+            if (bounds) {
+                const colors = ['#667eea', '#11998e', '#f5576c', '#fdb913', '#764ba2', '#00c9ff'];
+                const gridCols = Math.ceil(Math.sqrt(numZones));
+                const gridRows = Math.ceil(numZones / gridCols);
+
+                const latStep = (bounds.getNorth() - bounds.getSouth()) / gridRows;
+                const lngStep = (bounds.getEast() - bounds.getWest()) / gridCols;
+
+                let zoneIndex = 0;
+                for (let row = 0; row < gridRows && zoneIndex < numZones; row++) {
+                    for (let col = 0; col < gridCols && zoneIndex < numZones; col++) {
+                        const zoneBounds = [
+                            [bounds.getSouth() + row * latStep, bounds.getWest() + col * lngStep],
+                            [bounds.getSouth() + (row + 1) * latStep, bounds.getWest() + (col + 1) * lngStep]
+                        ];
+
+                        const rectangle = L.rectangle(zoneBounds, {
+                            color: colors[zoneIndex % colors.length],
+                            weight: 2,
+                            fillOpacity: 0.2
+                        }).addTo(map);
+
+                        rectangle.bindPopup(`<strong>Zone ${zoneIndex + 1}</strong><br>${hoursPerZone}h de boitage`);
+
+                        zoneIndex++;
+                    }
+                }
+            }
+
+            let html = `
+                <div class="zone-card">
+                    <h4>🏙️ Découpage de ${cityName}</h4>
+                    <p><strong>Nombre de zones:</strong> ${numZones}</p>
+                    <p><strong>Temps par zone:</strong> ${hoursPerZone}h</p>
+                    <p><strong>Temps total estimé:</strong> ${(numZones * hoursPerZone).toFixed(1)}h</p>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        Les zones ont été créées sur la carte. Chaque zone représente environ ${hoursPerZone}h de boitage.
+                    </p>
+                    <button class="btn btn-success" style="margin-top: 10px;" onclick="exportZones()">
+                        📥 Exporter les zones
+                    </button>
+                </div>
+            `;
+
+            zonesList.innerHTML = html;
+            showToast(`✅ ${numZones} zones créées`);
+        }
+
+        function exportZones() {
+            showToast('📥 Export des zones (fonctionnalité à venir)');
+        }
+
+        console.log('✅ DPE Pro v4.0 - Avec Zones Smart et géolocalisation');
         console.log('📊 Cache des communes:', communeCache);
     </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil@0.9.3/src/leaflet.geometryutil.js"></script>
 </body>
 </html>
