@@ -9,7 +9,7 @@ import { query } from '@/lib/db';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const user = await requireManager(session);
+    await requireManager(session);
 
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
