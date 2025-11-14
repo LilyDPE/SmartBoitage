@@ -1,19 +1,11 @@
-// Configuration Firebase
-// INSTRUCTIONS:
-// 1. Allez sur https://console.firebase.google.com/
-// 2. Créez un nouveau projet "DPE-Pro"
-// 3. Activez Authentication (Email/Password)
-// 4. Activez Firestore Database
-// 5. Dans Paramètres du projet > Général, copiez votre configuration
-// 6. Remplacez les valeurs ci-dessous par vos propres clés
-
+// Configuration Firebase - DPE Pro
 const firebaseConfig = {
-    apiKey: "VOTRE_API_KEY",
-    authDomain: "VOTRE_PROJECT_ID.firebaseapp.com",
-    projectId: "VOTRE_PROJECT_ID",
-    storageBucket: "VOTRE_PROJECT_ID.appspot.com",
-    messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-    appId: "VOTRE_APP_ID"
+    apiKey: "AIzaSyBddup87fRdUTs143H0T0FJAUnOHMRGYqs",
+    authDomain: "dpe-pro.firebaseapp.com",
+    projectId: "dpe-pro",
+    storageBucket: "dpe-pro.firebasestorage.app",
+    messagingSenderId: "481777621642",
+    appId: "1:481777621642:web:26b2ee92e799cb6e832b73"
 };
 
 // Initialiser Firebase

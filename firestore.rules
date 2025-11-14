@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Fonction helper pour vérifier si l'utilisateur est admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Fonction helper pour vérifier si l'utilisateur est connecté
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Collection users
+    match /users/{userId} {
+      // Lecture: utilisateur connecté peut lire son propre profil, admin peut tout lire
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Écriture: utilisateur peut modifier son lastActive, admin peut tout modifier
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Création: seulement admin
+      allow create: if isAdmin();
+    }
+
+    // Collection activities
+    match /activities/{activityId} {
+      // Lecture: admin peut tout lire
+      allow read: if isAdmin();
+      // Écriture: utilisateur connecté peut créer ses propres activités
+      allow create: if isAuthenticated();
+      // Update/Delete: interdit
+      allow update, delete: if false;
+    }
+
+    // Collection userNotes
+    match /userNotes/{userId} {
+      // Lecture/Écriture: utilisateur peut accéder à ses propres notes, admin peut tout lire
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+  }
+}
