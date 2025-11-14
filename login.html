@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - DPE Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e5ea;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.9em;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .demo-credentials {
+            background: #f0f8ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85em;
+        }
+
+        .demo-credentials h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .demo-credentials p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .demo-credentials code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🏠 DPE Pro</h1>
+            <p>Prospection intelligente</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="votre@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                🔐 Se connecter
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #667eea;">Connexion en cours...</p>
+        </div>
+
+        <div class="demo-credentials">
+            <h4>🔑 Comptes de démonstration</h4>
+            <p><strong>Administrateur:</strong><br>
+            Email: <code>admin@dpe-pro.fr</code><br>
+            Mot de passe: <code>admin123</code></p>
+
+            <p style="margin-top: 10px;"><strong>Commercial:</strong><br>
+            Email: <code>commercial@dpe-pro.fr</code><br>
+            Mot de passe: <code>commercial123</code></p>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Initialiser Firebase
+        initFirebase();
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+
+        // Vérifier si déjà connecté
+        checkAuth().then(user => {
+            if (user) {
+                redirectToDashboard();
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            errorMessage.classList.remove('show');
+            loading.style.display = 'block';
+            loginForm.style.display = 'none';
+
+            try {
+                // Connexion Firebase
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                console.log('✅ Connexion réussie:', user.email);
+
+                // Récupérer le profil utilisateur
+                const profile = await getUserProfile(user.uid);
+
+                if (profile) {
+                    // Sauvegarder en local
+                    localStorage.setItem('userProfile', JSON.stringify(profile));
+                    localStorage.setItem('userId', user.uid);
+
+                    redirectToDashboard();
+                } else {
+                    throw new Error('Profil utilisateur non trouvé');
+                }
+
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+
+                let message = 'Erreur de connexion';
+
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        message = 'Aucun compte trouvé avec cet email';
+                        break;
+                    case 'auth/wrong-password':
+                        message = 'Mot de passe incorrect';
+                        break;
+                    case 'auth/invalid-email':
+                        message = 'Email invalide';
+                        break;
+                    case 'auth/too-many-requests':
+                        message = 'Trop de tentatives. Réessayez plus tard';
+                        break;
+                    default:
+                        message = error.message || 'Une erreur est survenue';
+                }
+
+                errorMessage.textContent = '❌ ' + message;
+                errorMessage.classList.add('show');
+                loading.style.display = 'none';
+                loginForm.style.display = 'block';
+            }
+        });
+
+        function redirectToDashboard() {
+            const profile = JSON.parse(localStorage.getItem('userProfile'));
+
+            if (profile && profile.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Remplissage automatique pour démo
+        document.querySelector('.demo-credentials').addEventListener('click', (e) => {
+            if (e.target.tagName === 'CODE') {
+                const text = e.target.textContent;
+                if (text.includes('@')) {
+                    document.getElementById('email').value = text;
+                } else {
+                    document.getElementById('password').value = text;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

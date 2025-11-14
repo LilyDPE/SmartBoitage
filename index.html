@@ -48,6 +48,28 @@
             margin-top: 5px;
         }
 
+        .header-user {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .user-info {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
         .container {
             padding: 15px;
         }
@@ -690,6 +712,10 @@
     <div class="header">
         <h1>🏠 DPE Pro</h1>
         <p>Prospection avec Code INSEE</p>
+        <div class="header-user">
+            <span class="user-info" id="userInfo">👤 Chargement...</span>
+            <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+        </div>
     </div>
 
     <!-- Screen 1: Recherche -->
@@ -2689,9 +2715,203 @@
             showToast('📥 Export des zones (fonctionnalité à venir)');
         }
 
-        console.log('✅ DPE Pro v4.0 - Avec Zones Smart et géolocalisation');
+        // ==================== FIREBASE & TRACKING ====================
+        let currentUser = null;
+        let userProfile = null;
+
+        // Initialiser l'authentification au chargement
+        async function initAuth() {
+            // Vérifier si Firebase est configuré
+            if (typeof initFirebase === 'function') {
+                initFirebase();
+
+                // Vérifier l'authentification
+                currentUser = await checkAuth();
+
+                if (!currentUser) {
+                    // Rediriger vers login si pas connecté
+                    window.location.href = 'login.html';
+                    return false;
+                }
+
+                // Récupérer le profil
+                userProfile = await getUserProfile(currentUser.uid);
+
+                if (!userProfile) {
+                    alert('Profil utilisateur non trouvé');
+                    window.location.href = 'login.html';
+                    return false;
+                }
+
+                // Afficher les infos utilisateur
+                document.getElementById('userInfo').textContent =
+                    `👤 ${userProfile.name || currentUser.email}`;
+
+                // Mettre à jour l'activité
+                await updateUserActivity();
+
+                console.log('✅ Authentification réussie:', userProfile.name);
+                return true;
+            } else {
+                // Mode local sans authentification
+                console.log('⚠️ Mode local - Firebase non configuré');
+                document.querySelector('.header-user').style.display = 'none';
+                return true;
+            }
+        }
+
+        async function updateUserActivity() {
+            if (!currentUser || !db) return;
+
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Erreur mise à jour activité:', error);
+            }
+        }
+
+        // Tracker une activité
+        async function trackActivity(action, address, additionalData = {}) {
+            if (!currentUser || !db) {
+                console.log('Tracking local:', action, address);
+                return;
+            }
+
+            try {
+                const activity = {
+                    userId: currentUser.uid,
+                    userName: userProfile?.name || currentUser.email,
+                    action: action,
+                    address: address,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ...additionalData
+                };
+
+                await db.collection('activities').add(activity);
+                console.log('✅ Activité trackée:', action);
+            } catch (error) {
+                console.error('Erreur tracking:', error);
+            }
+        }
+
+        // Modifier setStatus pour tracker
+        const originalSetStatus = setStatus;
+        setStatus = function(noteKey, status, index) {
+            originalSetStatus(noteKey, status, index);
+
+            // Tracker l'action
+            const dpe = filteredData[index];
+            if (dpe) {
+                trackActivity(status, dpe.adresse_brut, {
+                    city: dpe.commune,
+                    postalCode: dpe.code_postal_brut,
+                    latitude: null, // À ajouter si disponible
+                    longitude: null
+                });
+            }
+        };
+
+        // Modifier saveNote pour tracker
+        const originalSaveNote = saveNote;
+        saveNote = function(noteKey, comment, index) {
+            originalSaveNote(noteKey, comment, index);
+
+            // Tracker la note
+            if (comment.trim()) {
+                const dpe = filteredData[index];
+                if (dpe) {
+                    trackActivity('note', dpe.adresse_brut, {
+                        note: comment,
+                        city: dpe.commune
+                    });
+                }
+            }
+        };
+
+        // Synchroniser les notes avec Firebase
+        async function syncNotes() {
+            if (!currentUser || !db) return;
+
+            try {
+                const notesData = {
+                    userId: currentUser.uid,
+                    notes: dpeNotes,
+                    lastSync: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await db.collection('userNotes').doc(currentUser.uid).set(notesData, { merge: true });
+                console.log('✅ Notes synchronisées');
+            } catch (error) {
+                console.error('Erreur sync notes:', error);
+            }
+        }
+
+        // Charger les notes depuis Firebase
+        async function loadNotesFromCloud() {
+            if (!currentUser || !db) return;
+
+            try {
+                const doc = await db.collection('userNotes').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.notes) {
+                        dpeNotes = data.notes;
+                        localStorage.setItem('dpeNotes', JSON.stringify(dpeNotes));
+                        updateNotesBadge();
+                        console.log('✅ Notes chargées depuis le cloud');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur chargement notes:', error);
+            }
+        }
+
+        // Modifier saveNotes pour sync auto
+        const originalSaveNotes = saveNotes;
+        saveNotes = function() {
+            originalSaveNotes();
+            // Sync avec Firebase
+            if (typeof syncNotes === 'function') {
+                syncNotes();
+            }
+        };
+
+        async function logout() {
+            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                if (auth) {
+                    await auth.signOut();
+                }
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Mettre à jour l'activité toutes les 5 minutes
+        if (typeof updateUserActivity === 'function') {
+            setInterval(updateUserActivity, 300000);
+        }
+
+        console.log('✅ DPE Pro v5.0 - Avec authentification et tracking');
         console.log('📊 Cache des communes:', communeCache);
+
+        // Initialiser l'authentification au chargement
+        window.addEventListener('load', async () => {
+            const authOk = await initAuth();
+            if (authOk && typeof loadNotesFromCloud === 'function') {
+                await loadNotesFromCloud();
+            }
+        });
     </script>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <!-- Leaflet Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.9.3/src/leaflet.geometryutil.js"></script>
