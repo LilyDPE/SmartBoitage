@@ -62,7 +62,7 @@ export default function ZonePlanPage() {
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
 
   const segmentLayersRef = useState<Map<string, L.GeoJSON>>(new Map())[0];
-  const routeLayerRef = useState<L.Polyline | null>(null)[0];
+  const [routeLayerRef, setRouteLayerRef] = useState<L.Polyline | null>(null);
 
   useEffect(() => {
     loadZoneData();
@@ -140,6 +140,8 @@ export default function ZonePlanPage() {
             opacity: 0.8,
           });
 
+          setRouteLayerRef(routeLayer);
+
           alert(
             `Parcours optimisé !\nDistance: ${data.stats.totalDistance}\nDurée estimée: ${data.stats.estimatedDuration}`
           );
@@ -180,7 +182,7 @@ export default function ZonePlanPage() {
           weight: 3,
           opacity: 0.7,
         },
-        onEachFeature: (feature, layer: any) => {
+        onEachFeature: (_feature: any, layer: any) => {
           layer.bindPopup(`
             <strong>${segment.street_nom || 'Sans nom'}</strong><br/>
             Côté: ${segment.cote}<br/>

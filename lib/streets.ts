@@ -9,7 +9,7 @@ import {
   groupByParity,
   hasHouseNumberData,
 } from './overpass';
-import { offsetLine, getLineMidpoint, calculateLineLength } from './geo';
+import { offsetLine, calculateLineLength } from './geo';
 
 export interface StreetSegment {
   id?: string;
@@ -312,7 +312,7 @@ export async function updateSegmentOrder(
   order: number[]
 ): Promise<void> {
   // Use transaction to update all segments atomically
-  const client = await query('BEGIN').then(() => null);
+  await query('BEGIN');
 
   try {
     for (let i = 0; i < segmentIds.length; i++) {

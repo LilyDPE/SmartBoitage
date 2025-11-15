@@ -111,29 +111,7 @@ function buildOverpassQuery(
     includePaths: boolean;
   }
 ): string {
-  const { timeout, includeResidential, includeService, includePaths } = options;
-
-  // Highway types to include
-  const highwayTypes = [
-    'primary',
-    'secondary',
-    'tertiary',
-    'unclassified',
-    'residential',
-    'living_street',
-    'pedestrian',
-  ];
-
-  if (includeService) {
-    highwayTypes.push('service');
-  }
-
-  if (includePaths) {
-    highwayTypes.push('footway', 'path', 'cycleway');
-  }
-
-  // Build highway filter
-  const highwayFilter = highwayTypes.map((type) => `["highway"="${type}"]`).join('');
+  const { timeout } = options;
 
   const query = `
 [out:json][timeout:${timeout}];
@@ -373,7 +351,7 @@ export function mergeConnectedStreets(streets: OSMStreet[]): OSMStreet[] {
   const merged: OSMStreet[] = [];
 
   // For each name group, try to merge connected segments
-  for (const [name, segments] of streetsByName) {
+  for (const [_name, segments] of streetsByName) {
     if (segments.length === 1) {
       merged.push(segments[0]);
       continue;
