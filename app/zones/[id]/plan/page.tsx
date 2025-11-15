@@ -1,7 +1,7 @@
 'use client';
 
 // Zone Planning Page - Optimize route
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type L from 'leaflet';
@@ -61,8 +61,8 @@ export default function ZonePlanPage() {
   const [error, setError] = useState<string | null>(null);
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
 
-  const segmentLayersRef = useState<Map<string, L.GeoJSON>>(new Map())[0];
-  const routeLayerRef = useState<L.Polyline | null>(null)[0];
+  const segmentLayersRef = useRef<Map<string, L.GeoJSON>>(new Map());
+  const routeLayerRef = useRef<L.Polyline | null>(null);
 
   useEffect(() => {
     loadZoneData();
@@ -81,7 +81,7 @@ export default function ZonePlanPage() {
 
         // Draw zone and segments on map
         if (map && data.zone) {
-          const _zoneLayer = addGeoJSONLayer(map, data.zone.geom, {
+          addGeoJSONLayer(map, data.zone.geom, {
             style: {
               color: '#3388ff',
               weight: 2,
@@ -130,11 +130,11 @@ export default function ZonePlanPage() {
         // Draw route on map
         if (map && data.route.geometry) {
           // Remove old route
-          if (routeLayerRef) {
-            map.removeLayer(routeLayerRef);
+          if (routeLayerRef.current) {
+            map.removeLayer(routeLayerRef.current);
           }
 
-          const routeLayer = drawLine(map, data.route.geometry.coordinates, {
+          routeLayerRef.current = drawLine(map, data.route.geometry.coordinates, {
             color: '#ff3388',
             weight: 4,
             opacity: 0.8,
@@ -160,8 +160,8 @@ export default function ZonePlanPage() {
     if (!map || segments.length === 0) return;
 
     // Clear old layers
-    segmentLayersRef.forEach((layer) => map.removeLayer(layer));
-    segmentLayersRef.clear();
+    segmentLayersRef.current.forEach((layer) => map.removeLayer(layer));
+    segmentLayersRef.current.clear();
 
     // Draw each segment
     segments.forEach((segment) => {
@@ -180,7 +180,7 @@ export default function ZonePlanPage() {
           weight: 3,
           opacity: 0.7,
         },
-        onEachFeature: (feature, layer: any) => {
+        onEachFeature: (_feature: any, layer: any) => {
           layer.bindPopup(`
             <strong>${segment.street_nom || 'Sans nom'}</strong><br/>
             Côté: ${segment.cote}<br/>
@@ -190,7 +190,7 @@ export default function ZonePlanPage() {
         },
       });
 
-      segmentLayersRef.set(segment.id, layer);
+      segmentLayersRef.current.set(segment.id, layer);
     });
   }, [map, segments]);
 
@@ -206,7 +206,7 @@ export default function ZonePlanPage() {
     if (!map) return;
 
     // Highlight segment on map
-    segmentLayersRef.forEach((layer, id) => {
+    segmentLayersRef.current.forEach((layer, id) => {
       if (id === segment?.id) {
         layer.setStyle({ weight: 6, opacity: 1 });
       } else {

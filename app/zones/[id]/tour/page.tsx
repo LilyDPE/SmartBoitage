@@ -19,7 +19,7 @@ export default function TourPage() {
   const [map, setMap] = useState<L.Map | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [zone, setZone] = useState<any>(null);
-  const [route, setRoute] = useState<any>(null);
+  const [route] = useState<any>(null);
   const [progression, setProgression] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
