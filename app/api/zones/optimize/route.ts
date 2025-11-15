@@ -2,7 +2,7 @@
 // POST /api/zones/optimize - Analyze and optimize a drawn zone
 
 import { NextRequest, NextResponse } from 'next/server';
-import { extractStreetsFromPolygon } from '@/lib/overpass';
+import { extractStreetsFromOSM } from '@/lib/overpass';
 import { generateSegments } from '@/lib/streets';
 
 export async function POST(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract streets from the zone
-    const streets = await extractStreetsFromPolygon(geom);
+    const streets = await extractStreetsFromOSM(geom.coordinates);
 
     if (streets.length === 0) {
       return NextResponse.json({
@@ -35,10 +35,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate statistics
-    const totalLength = streets.reduce(
-      (sum, street) => sum + (street.length || 0),
-      0
-    );
+    const totalLength = streets.reduce((sum, street) => {
+      // Calculate length from geometry coordinates
+      let length = 0;
+      if (street.geometry && street.geometry.coordinates) {
+        for (let i = 0; i < street.geometry.coordinates.length - 1; i++) {
+          const [lon1, lat1] = street.geometry.coordinates[i];
+          const [lon2, lat2] = street.geometry.coordinates[i + 1];
+          // Haversine distance in meters
+          const R = 6371000; // Earth's radius in meters
+          const dLat = ((lat2 - lat1) * Math.PI) / 180;
+          const dLon = ((lon2 - lon1) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lat1 * Math.PI) / 180) *
+              Math.cos((lat2 * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          length += R * c;
+        }
+      }
+      return sum + length;
+    }, 0);
 
     // Estimate duration (assuming 300m per hour for door-to-door)
     const estimatedDurationMinutes = Math.round((totalLength / 300) * 60);
@@ -75,7 +94,7 @@ export async function POST(request: NextRequest) {
         type: 'disconnected',
         message: `${disconnectedStreets.length} rue(s) isolée(s) détectée(s). Cela peut augmenter le temps de trajet.`,
         action: 'review',
-        streets: disconnectedStreets.map((s) => s.nom).slice(0, 5),
+        streets: disconnectedStreets.map((s) => s.name).slice(0, 5),
       });
     }
 
@@ -105,12 +124,33 @@ export async function POST(request: NextRequest) {
         deadEnds: deadEnds.length,
         disconnected: disconnectedStreets.length,
       },
-      streets: streets.map((s) => ({
-        nom: s.nom,
-        osmId: s.osmId,
-        length: s.length,
-        highway: s.tags?.highway,
-      })),
+      streets: streets.map((s) => {
+        // Calculate length for this street
+        let length = 0;
+        if (s.geometry && s.geometry.coordinates) {
+          for (let i = 0; i < s.geometry.coordinates.length - 1; i++) {
+            const [lon1, lat1] = s.geometry.coordinates[i];
+            const [lon2, lat2] = s.geometry.coordinates[i + 1];
+            const R = 6371000;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            length += R * c;
+          }
+        }
+        return {
+          name: s.name,
+          id: s.id,
+          length: Math.round(length),
+          highway: s.tags?.highway,
+        };
+      }),
     });
   } catch (error: any) {
     console.error('Error optimizing zone:', error);
@@ -131,17 +171,17 @@ function analyzeConnectivity(streets: any[]): any[] {
   // Simple heuristic: check if streets share endpoints
   // In a real implementation, you'd build a graph and check for connected components
   for (const street of streets) {
-    if (!street.geom || !street.geom.coordinates) continue;
+    if (!street.geometry || !street.geometry.coordinates) continue;
 
-    const coords = street.geom.coordinates;
+    const coords = street.geometry.coordinates;
     const start = coords[0];
     const end = coords[coords.length - 1];
 
     // Check if this street connects to any other
     const hasConnection = streets.some((other) => {
-      if (other === street || !other.geom || !other.geom.coordinates) return false;
+      if (other === street || !other.geometry || !other.geometry.coordinates) return false;
 
-      const otherCoords = other.geom.coordinates;
+      const otherCoords = other.geometry.coordinates;
       const otherStart = otherCoords[0];
       const otherEnd = otherCoords[otherCoords.length - 1];
 

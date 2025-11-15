@@ -2,8 +2,7 @@
 // POST /api/zones/auto-split - Split a large zone into optimal sub-zones
 
 import { NextRequest, NextResponse } from 'next/server';
-import { extractStreetsFromPolygon } from '@/lib/overpass';
-import { calculatePolygonArea, createBoundingBox } from '@/lib/geo';
+import { extractStreetsFromOSM } from '@/lib/overpass';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract all streets from the large zone
-    const streets = await extractStreetsFromPolygon(geom);
+    const streets = await extractStreetsFromOSM(geom.coordinates);
 
     if (streets.length === 0) {
       return NextResponse.json({
@@ -28,10 +27,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate total length and estimated duration
-    const totalLength = streets.reduce(
-      (sum, street) => sum + (street.length || 0),
-      0
-    );
+    const totalLength = streets.reduce((sum, street) => {
+      let length = 0;
+      if (street.geometry && street.geometry.coordinates) {
+        for (let i = 0; i < street.geometry.coordinates.length - 1; i++) {
+          const [lon1, lat1] = street.geometry.coordinates[i];
+          const [lon2, lat2] = street.geometry.coordinates[i + 1];
+          const R = 6371000;
+          const dLat = ((lat2 - lat1) * Math.PI) / 180;
+          const dLon = ((lon2 - lon1) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lat1 * Math.PI) / 180) *
+              Math.cos((lat2 * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          length += R * c;
+        }
+      }
+      return sum + length;
+    }, 0);
     const totalDurationMinutes = Math.round((totalLength / 300) * 60);
 
     // Determine number of zones needed
@@ -56,10 +72,27 @@ export async function POST(request: NextRequest) {
 
     // Calculate statistics for each zone
     const zonesWithStats = zones.map((zone, index) => {
-      const zoneLength = zone.streets.reduce(
-        (sum, s) => sum + (s.length || 0),
-        0
-      );
+      const zoneLength = zone.streets.reduce((sum: number, s: any) => {
+        let length = 0;
+        if (s.geometry && s.geometry.coordinates) {
+          for (let i = 0; i < s.geometry.coordinates.length - 1; i++) {
+            const [lon1, lat1] = s.geometry.coordinates[i];
+            const [lon2, lat2] = s.geometry.coordinates[i + 1];
+            const R = 6371000;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            length += R * c;
+          }
+        }
+        return sum + length;
+      }, 0);
       const zoneDuration = Math.round((zoneLength / 300) * 60);
 
       return {
@@ -112,8 +145,8 @@ function splitStreetsIntoZones(
   // Calculate bounding box of all streets
   const allCoords: number[][] = [];
   streets.forEach((street) => {
-    if (street.geom && street.geom.coordinates) {
-      allCoords.push(...street.geom.coordinates);
+    if (street.geometry && street.geometry.coordinates) {
+      allCoords.push(...street.geometry.coordinates);
     }
   });
 
@@ -147,10 +180,10 @@ function splitStreetsIntoZones(
 
       // Find streets in this cell
       const cellStreets = streets.filter((street) => {
-        if (!street.geom || !street.geom.coordinates) return false;
+        if (!street.geometry || !street.geometry.coordinates) return false;
 
         // Check if any coordinate is within the cell
-        return street.geom.coordinates.some((coord: number[]) => {
+        return street.geometry.coordinates.some((coord: number[]) => {
           return (
             coord[0] >= cellMinLon &&
             coord[0] <= cellMaxLon &&
@@ -192,17 +225,37 @@ function splitStreetsIntoZones(
 
   // If we have unassigned streets (due to grid overlap), assign them to nearest zone
   const assignedStreetIds = new Set(
-    zones.flatMap((z) => z.streets.map((s: any) => s.osmId || s.id))
+    zones.flatMap((z) => z.streets.map((s: any) => s.id))
   );
 
   const unassignedStreets = streets.filter(
-    (s) => !assignedStreetIds.has(s.osmId || s.id)
+    (s) => !assignedStreetIds.has(s.id)
   );
 
   if (unassignedStreets.length > 0 && zones.length > 0) {
     // Add to zone with least total length
     const zoneLengths = zones.map((z) =>
-      z.streets.reduce((sum: number, s: any) => sum + (s.length || 0), 0)
+      z.streets.reduce((sum: number, s: any) => {
+        let length = 0;
+        if (s.geometry && s.geometry.coordinates) {
+          for (let i = 0; i < s.geometry.coordinates.length - 1; i++) {
+            const [lon1, lat1] = s.geometry.coordinates[i];
+            const [lon2, lat2] = s.geometry.coordinates[i + 1];
+            const R = 6371000;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLon = ((lon2 - lon1) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            length += R * c;
+          }
+        }
+        return sum + length;
+      }, 0)
     );
     const minIndex = zoneLengths.indexOf(Math.min(...zoneLengths));
     zones[minIndex].streets.push(...unassignedStreets);
