@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions, requireAdmin, getUserById, updateUser, deleteUser, resetPassword, logActivity } from '@/lib/auth';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -40,7 +40,7 @@ export async function GET(
 }
 
 export async function PUT(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -99,7 +99,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
