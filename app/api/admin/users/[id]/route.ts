@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions, requireAdmin, getUserById, updateUser, deleteUser, resetPassword, logActivity } from '@/lib/auth';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
