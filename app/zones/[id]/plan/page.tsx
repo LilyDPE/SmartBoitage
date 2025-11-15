@@ -1,7 +1,7 @@
 'use client';
 
 // Zone Planning Page - Optimize route
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Map, { addGeoJSONLayer, drawLine, fitBounds } from '@/components/Map';
 import SegmentList from '@/components/SegmentList';
