@@ -38,15 +38,13 @@ export async function POST(request: NextRequest) {
       await db.updateSessionPosition(sessionId, lon, lat);
     }
 
-    let currentSegment = null;
     let detectedSegment = null;
 
     // Auto-detect segment based on GPS position
     if (lon !== undefined && lat !== undefined) {
       detectedSegment = await detectCurrentSegment(sessionId, lon, lat, 15);
 
-      if (detectedSegment) {
-        currentSegment = detectedSegment;
+      if (detectedSegment) (
 
         // Auto-start segment if not already started
         await db.startSegment(sessionId, detectedSegment.id!);
