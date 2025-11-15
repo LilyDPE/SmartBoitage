@@ -81,7 +81,7 @@ export default function ZonePlanPage() {
 
         // Draw zone and segments on map
         if (map && data.zone) {
-          const _zoneLayer = addGeoJSONLayer(map, data.zone.geom, {
+          addGeoJSONLayer(map, data.zone.geom, {
             style: {
               color: '#3388ff',
               weight: 2,
