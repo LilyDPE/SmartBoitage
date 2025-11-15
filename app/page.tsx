@@ -37,7 +37,7 @@ export default function HomePage() {
     }
   };
 
-  const deleteZone = async (zoneId: string) => {
+  const deleteZone = async (_zoneId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette zone ?')) {
       return;
     }
