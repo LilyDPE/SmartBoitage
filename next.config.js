@@ -2,20 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Ignore TypeScript and ESLint errors during build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  // Enable PWA support
-  experimental: {
-    // Enable server actions if needed
-    serverActions: true,
-  },
-
   // Webpack configuration
   webpack: (config, { isServer }) => {
     // Fix for Leaflet in Next.js

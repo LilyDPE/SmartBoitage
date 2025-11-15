@@ -3,9 +3,48 @@
 // Zone Planning Page - Optimize route
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Map, { addGeoJSONLayer, drawLine, fitBounds } from '@/components/Map';
+import dynamic from 'next/dynamic';
+import type L from 'leaflet';
 import SegmentList from '@/components/SegmentList';
-import L from 'leaflet';
+
+// Import Map without SSR to avoid Leaflet's window dependency
+const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+
+// Utility functions (avoiding SSR issues with direct imports)
+const addGeoJSONLayer = (map: L.Map, geojson: any, options?: any) => {
+  if (typeof window === 'undefined') return null;
+  const L = require('leaflet');
+  const layer = L.geoJSON(geojson, {
+    style: { color: '#3388ff', weight: 3, opacity: 0.8 },
+    ...options,
+  });
+  layer.addTo(map);
+  return layer;
+};
+
+const drawLine = (map: L.Map, coordinates: number[][], options?: any) => {
+  if (typeof window === 'undefined') return null;
+  const L = require('leaflet');
+  const latlngs = coordinates.map((coord: number[]) => [coord[1], coord[0]]);
+  const line = L.polyline(latlngs, {
+    color: '#ff3388',
+    weight: 4,
+    opacity: 0.8,
+    ...options,
+  });
+  line.addTo(map);
+  return line;
+};
+
+const fitBounds = (map: L.Map, geojson: any) => {
+  if (typeof window === 'undefined') return;
+  const L = require('leaflet');
+  const layer = L.geoJSON(geojson);
+  const bounds = layer.getBounds();
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }
+};
 
 export default function ZonePlanPage() {
   const router = useRouter();

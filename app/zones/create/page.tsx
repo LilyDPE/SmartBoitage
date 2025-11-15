@@ -3,9 +3,12 @@
 // Zone Creation Page
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Map from '@/components/Map';
-import ZoneDrawer from '@/components/ZoneDrawer';
-import L from 'leaflet';
+import dynamic from 'next/dynamic';
+import type L from 'leaflet';
+
+// Import Map and ZoneDrawer without SSR to avoid Leaflet's window dependency
+const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+const ZoneDrawer = dynamic(() => import('@/components/ZoneDrawer'), { ssr: false });
 
 export default function CreateZonePage() {
   const router = useRouter();

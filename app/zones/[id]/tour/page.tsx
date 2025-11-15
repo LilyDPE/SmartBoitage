@@ -3,10 +3,13 @@
 // Tour Page - GPS-tracked distribution session
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Map from '@/components/Map';
+import dynamic from 'next/dynamic';
+import type L from 'leaflet';
 import TourPlayer from '@/components/TourPlayer';
 import SegmentList from '@/components/SegmentList';
-import L from 'leaflet';
+
+// Import Map without SSR to avoid Leaflet's window dependency
+const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
 export default function TourPage() {
   const router = useRouter();
