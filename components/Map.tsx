@@ -21,6 +21,8 @@ export interface MapProps {
   style?: React.CSSProperties;
   onMapReady?: (map: L.Map) => void;
   children?: React.ReactNode;
+  autoGeolocate?: boolean;
+  onLocationFound?: (lat: number, lon: number) => void;
 }
 
 export default function Map({
@@ -28,10 +30,13 @@ export default function Map({
   zoom = 13,
   style = { width: '100%', height: '500px' },
   onMapReady,
+  autoGeolocate = false,
+  onLocationFound,
 }: MapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapReady, setMapReady] = useState(false);
+  const locationMarkerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -57,8 +62,49 @@ export default function Map({
       onMapReady(map);
     }
 
+    // Auto-geolocate if requested
+    if (autoGeolocate && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+
+          // Center map on user location
+          map.setView([latitude, longitude], 14);
+
+          // Add location marker
+          const marker = L.circleMarker([latitude, longitude], {
+            radius: 10,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#4285f4',
+            fillOpacity: 1,
+          }).addTo(map);
+
+          marker.bindPopup('Votre position').openPopup();
+          locationMarkerRef.current = marker;
+
+          // Notify parent
+          if (onLocationFound) {
+            onLocationFound(latitude, longitude);
+          }
+        },
+        (error) => {
+          console.warn('Geolocation error:', error.message);
+          // Keep default center if geolocation fails
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    }
+
     // Cleanup
     return () => {
+      if (locationMarkerRef.current) {
+        locationMarkerRef.current.remove();
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
