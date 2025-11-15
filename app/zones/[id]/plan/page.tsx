@@ -81,7 +81,7 @@ export default function ZonePlanPage() {
 
         // Draw zone and segments on map
         if (map && data.zone) {
-          const _zoneLayer = addGeoJSONLayer(map, data.zone.geom, {
+          addGeoJSONLayer(map, data.zone.geom, {
             style: {
               color: '#3388ff',
               weight: 2,
@@ -134,7 +134,7 @@ export default function ZonePlanPage() {
             map.removeLayer(routeLayerRef);
           }
 
-          const routeLayer = drawLine(map, data.route.geometry.coordinates, {
+          drawLine(map, data.route.geometry.coordinates, {
             color: '#ff3388',
             weight: 4,
             opacity: 0.8,
@@ -180,7 +180,7 @@ export default function ZonePlanPage() {
           weight: 3,
           opacity: 0.7,
         },
-        onEachFeature: (feature, layer: any) => {
+        onEachFeature: (_feature: any, layer: any) => {
           layer.bindPopup(`
             <strong>${segment.street_nom || 'Sans nom'}</strong><br/>
             Côté: ${segment.cote}<br/>
