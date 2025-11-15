@@ -55,7 +55,7 @@ export default function ZonePlanPage() {
   const [zone, setZone] = useState<any>(null);
   const [segments, setSegments] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [route, setRoute] = useState<any>(null);
+  const [_route, setRoute] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
