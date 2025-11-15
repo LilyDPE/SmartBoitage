@@ -1,0 +1,33 @@
+services:
+  # Next.js Application
+  - type: web
+    name: smartboitage
+    env: node
+    region: frankfurt # Europe (change to oregon/singapore if needed)
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ORS_API_KEY
+        sync: false # Set manually in Render dashboard
+      - key: ORS_BASE_URL
+        value: https://api.openrouteservice.org
+      - key: OVERPASS_URL
+        value: https://overpass-api.de/api/interpreter
+      - key: NEXTAUTH_SECRET
+        generateValue: true # Render will generate a secure random value
+      - key: NEXTAUTH_URL
+        value: https://smartboitage.onrender.com # Update with your actual domain
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://smartboitage.onrender.com # Update with your actual domain
+      - key: DATABASE_URL
+        sync: false # Set from Supabase
+      - key: DB_POOL_MAX
+        value: 20
+      - key: DB_POOL_IDLE_TIMEOUT
+        value: 30000
+      - key: DB_POOL_CONNECTION_TIMEOUT
+        value: 10000
