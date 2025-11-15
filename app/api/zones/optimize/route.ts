@@ -3,7 +3,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { extractStreetsFromOSM } from '@/lib/overpass';
-import { generateSegments } from '@/lib/streets';
 
 export async function POST(request: NextRequest) {
   try {
