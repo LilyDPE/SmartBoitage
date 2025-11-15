@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (lon !== undefined && lat !== undefined) {
       detectedSegment = await detectCurrentSegment(sessionId, lon, lat, 15);
 
-      if (detectedSegment) (
+      if (detectedSegment) {
 
         // Auto-start segment if not already started
         await db.startSegment(sessionId, detectedSegment.id!);
