@@ -9,7 +9,7 @@ import TourPlayer from '@/components/TourPlayer';
 import SegmentList from '@/components/SegmentList';
 
 // Import Map without SSR to avoid Leaflet's window dependency
-const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false });
 
 export default function TourPage() {
   const router = useRouter();
@@ -261,7 +261,7 @@ export default function TourPage() {
               {/* Left panel - Map and GPS */}
               <div>
                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                  <Map
+                  <MapComponent
                     center={[2.3522, 48.8566]}
                     zoom={16}
                     style={{ width: '100%', height: '600px' }}

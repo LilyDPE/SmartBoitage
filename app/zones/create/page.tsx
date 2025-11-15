@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import type L from 'leaflet';
 
 // Import Map and ZoneDrawer without SSR to avoid Leaflet's window dependency
-const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false });
 const ZoneDrawer = dynamic(() => import('@/components/ZoneDrawer'), { ssr: false });
 
 export default function CreateZonePage() {
@@ -178,7 +178,7 @@ export default function CreateZonePage() {
           {/* Right panel - Map */}
           <div>
             <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-              <Map
+              <MapComponent
                 center={[2.3522, 48.8566]} // Paris
                 zoom={13}
                 style={{ width: '100%', height: '600px' }}

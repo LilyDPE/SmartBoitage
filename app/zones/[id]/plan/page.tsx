@@ -8,7 +8,7 @@ import type L from 'leaflet';
 import SegmentList from '@/components/SegmentList';
 
 // Import Map without SSR to avoid Leaflet's window dependency
-const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false });
 
 // Utility functions (avoiding SSR issues with direct imports)
 const addGeoJSONLayer = (map: L.Map, geojson: any, options?: any) => {
@@ -300,7 +300,7 @@ export default function ZonePlanPage() {
             {/* Right panel - Map */}
             <div>
               <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                <Map
+                <MapComponent
                   center={[2.3522, 48.8566]}
                   zoom={13}
                   style={{ width: '100%', height: '800px' }}
