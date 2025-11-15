@@ -35,7 +35,6 @@ export default function Map({
 }: MapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mapReady, setMapReady] = useState(false);
   const locationMarkerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
@@ -56,7 +55,6 @@ export default function Map({
     }).addTo(map);
 
     mapRef.current = map;
-    setMapReady(true);
 
     if (onMapReady) {
       onMapReady(map);
