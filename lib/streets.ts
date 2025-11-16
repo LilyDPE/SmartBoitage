@@ -305,6 +305,43 @@ export async function getSegmentMidpoints(zoneId: string): Promise<
 }
 
 /**
+ * Get street midpoints for route optimization (mode 2 personnes)
+ * Groups segments by street (both sides together)
+ */
+export async function getStreetMidpoints(zoneId: string): Promise<
+  Array<{
+    streetId: string;
+    streetName: string;
+    segmentIds: string[];
+    midpoint: Position;
+    longueur: number;
+  }>
+> {
+  const result = await query(
+    `SELECT
+       s.street_id,
+       st.nom as street_name,
+       array_agg(s.id) as segment_ids,
+       ST_AsGeoJSON(ST_Centroid(ST_Collect(s.geom)))::json as midpoint,
+       SUM(s.longueur_m) as longueur_totale
+     FROM segments_rue s
+     LEFT JOIN streets st ON s.street_id = st.id
+     WHERE s.zone_id = $1
+     GROUP BY s.street_id, st.nom
+     ORDER BY MIN(s.ordre_visite) NULLS LAST, MIN(s.created_at)`,
+    [zoneId]
+  );
+
+  return result.rows.map((row) => ({
+    streetId: row.street_id,
+    streetName: row.street_name || 'Sans nom',
+    segmentIds: row.segment_ids,
+    midpoint: row.midpoint.coordinates,
+    longueur: row.longueur_totale,
+  }));
+}
+
+/**
  * Update segment visit order based on optimization
  */
 export async function updateSegmentOrder(

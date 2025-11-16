@@ -60,6 +60,7 @@ export default function ZonePlanPage() {
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
+  const [teamSize, setTeamSize] = useState<number>(1);
 
   const segmentLayersRef = useState<Map<string, L.GeoJSON>>(new Map())[0];
   const routeLayerRef = useState<L.Polyline | null>(null)[0];
@@ -116,6 +117,7 @@ export default function ZonePlanPage() {
         body: JSON.stringify({
           profile: 'foot-walking',
           saveToDb: true,
+          teamSize,
         }),
       });
 
@@ -256,6 +258,34 @@ export default function ZonePlanPage() {
             <div>
               <div className="card">
                 <div style={{ marginBottom: '20px' }}>
+                  {/* Team Size Selector */}
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                      Nombre de boîteurs
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        className={teamSize === 1 ? "btn btn-primary" : "btn btn-secondary"}
+                        onClick={() => setTeamSize(1)}
+                        style={{ flex: 1 }}
+                      >
+                        👤 1 personne
+                      </button>
+                      <button
+                        className={teamSize === 2 ? "btn btn-primary" : "btn btn-secondary"}
+                        onClick={() => setTeamSize(2)}
+                        style={{ flex: 1 }}
+                      >
+                        👥 2 personnes
+                      </button>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                      {teamSize === 1
+                        ? "Optimise segment par segment (un côté à la fois)"
+                        : "Optimise par rue (les deux côtés en même temps)"}
+                    </div>
+                  </div>
+
                   <button
                     className="btn btn-primary"
                     onClick={optimizeRoute}
