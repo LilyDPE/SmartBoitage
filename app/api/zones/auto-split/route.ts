@@ -48,8 +48,9 @@ export async function POST(request: NextRequest) {
       }
       return sum + length;
     }, 0);
-    // Estimate duration (assuming 1500m per hour for door-to-door in urban areas)
-    const totalDurationMinutes = Math.round((totalLength / 1500) * 60);
+    // Estimate duration (assuming 2500m per hour for door-to-door in urban areas)
+    // Normal walking speed is ~4500m/h, reduced to account for time spent at each door
+    const totalDurationMinutes = Math.round((totalLength / 2500) * 60);
 
     // Determine number of zones needed
     const numZones = Math.ceil(totalDurationMinutes / targetDurationMinutes);
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
         }
         return sum + length;
       }, 0);
-      const zoneDuration = Math.round((zoneLength / 1500) * 60);
+      const zoneDuration = Math.round((zoneLength / 2500) * 60);
 
       return {
         id: `zone_${index + 1}`,
