@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Get progression
     const progression = await db.getProgression(sessionId);
-    const completed = progression.filter((p) => p.fait).length;
+    const completed = progression.filter((p: any) => p.fait).length;
     const total = progression.length;
 
     // Get stats
