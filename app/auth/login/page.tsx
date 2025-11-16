@@ -147,23 +147,6 @@ export default function LoginPage() {
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
-
-        <div
-          style={{
-            marginTop: '30px',
-            padding: '15px',
-            background: '#f5f5f5',
-            borderRadius: '5px',
-            fontSize: '13px',
-            color: '#666',
-          }}
-        >
-          <strong>Comptes de test:</strong>
-          <div style={{ marginTop: '8px' }}>
-            • Admin: admin@smartboitage.fr / admin123
-            <br />• Commercial: commercial1@smartboitage.fr / commercial123
-          </div>
-        </div>
       </div>
     </div>
   );

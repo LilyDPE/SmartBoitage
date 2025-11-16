@@ -340,8 +340,8 @@ export default function QuickTourPage() {
           <div>
             <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
               <MapComponent
-                center={[2.3522, 48.8566]}
-                zoom={13}
+                center={position ? [position.lat, position.lon] : [50.05, 1.55]} // Default: Nord de la France
+                zoom={position ? 15 : 10}
                 style={{ width: '100%', height: '700px' }}
                 onMapReady={setMap}
               />
