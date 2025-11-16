@@ -37,6 +37,7 @@ export interface RouteOptimizationResult {
   totalDistance: number;
   totalDuration: number;
   segmentOrder: number[];
+  instructions?: any[]; // Turn-by-turn instructions
 }
 
 /**
@@ -108,8 +109,9 @@ export async function getDirections(
 
   const body: any = {
     coordinates: waypoints,
-    instructions: options.instructions ?? false,
+    instructions: options.instructions ?? true, // Enable instructions by default for navigation
     preference: 'shortest',
+    language: 'fr', // French instructions
   };
 
   try {
@@ -172,9 +174,9 @@ export async function optimizeRoute(
   // Step 3: Reorder waypoints
   const orderedWaypoints = order.map((idx) => waypoints[idx]);
 
-  // Step 4: Get actual route through ordered waypoints
+  // Step 4: Get actual route through ordered waypoints with turn-by-turn instructions
   const directions = await getDirections(orderedWaypoints, profile, {
-    instructions: false,
+    instructions: true,
   });
 
   const feature = directions.features[0];
@@ -182,12 +184,16 @@ export async function optimizeRoute(
   const totalDistance = feature.properties.summary.distance;
   const totalDuration = feature.properties.summary.duration;
 
+  // Extract turn-by-turn instructions from all segments
+  const instructions = feature.properties.segments.flatMap((segment: any) => segment.steps || []);
+
   return {
     orderedWaypoints,
     route,
     totalDistance,
     totalDuration,
     segmentOrder: order,
+    instructions,
   };
 }
 

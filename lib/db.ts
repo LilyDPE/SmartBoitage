@@ -323,12 +323,30 @@ export const db = {
   },
 
   // Save optimized route
-  async saveRoute(zoneId: string, geom: any, waypoints: any[], distanceM: number, durationS: number) {
+  async saveRoute(zoneId: string, geom: any, waypoints: any[], distanceM: number, durationS: number, instructions?: any[]) {
+    // Try to update zone with route info and instructions
+    await query(
+      `UPDATE zones
+       SET route_geom = ST_GeomFromGeoJSON($1),
+           route_instructions = $2,
+           updated_at = NOW()
+       WHERE id = $3`,
+      [JSON.stringify(geom), instructions ? JSON.stringify(instructions) : null, zoneId]
+    );
+
+    // Also save in routes_optimisees table for history
     const result = await query(
-      `INSERT INTO routes_optimisees (zone_id, geom, waypoints, distance_m, duration_s)
-       VALUES ($1, ST_GeomFromGeoJSON($2), $3, $4, $5)
+      `INSERT INTO routes_optimisees (zone_id, geom, waypoints, distance_m, duration_s, instructions)
+       VALUES ($1, ST_GeomFromGeoJSON($2), $3, $4, $5, $6)
+       ON CONFLICT (zone_id) DO UPDATE SET
+         geom = EXCLUDED.geom,
+         waypoints = EXCLUDED.waypoints,
+         distance_m = EXCLUDED.distance_m,
+         duration_s = EXCLUDED.duration_s,
+         instructions = EXCLUDED.instructions,
+         created_at = NOW()
        RETURNING id, distance_m, duration_s, created_at`,
-      [zoneId, JSON.stringify(geom), JSON.stringify(waypoints), distanceM, durationS]
+      [zoneId, JSON.stringify(geom), JSON.stringify(waypoints), distanceM, durationS, instructions ? JSON.stringify(instructions) : null]
     );
     return result.rows[0];
   },

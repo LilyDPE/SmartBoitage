@@ -106,7 +106,8 @@ export async function POST(
         result.route,
         result.orderedWaypoints,
         result.totalDistance,
-        result.totalDuration
+        result.totalDuration,
+        result.instructions
       );
     }
 

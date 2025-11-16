@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import type L from 'leaflet';
 import TourPlayer from '@/components/TourPlayer';
 import SegmentList from '@/components/SegmentList';
+import NavigationGuide from '@/components/NavigationGuide';
 
 // Import Map without SSR to avoid Leaflet's window dependency
 const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false });
@@ -24,6 +25,9 @@ export default function TourPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  const [instructions, setInstructions] = useState<any[]>([]);
+  const [currentPosition, setCurrentPosition] = useState<{ lon: number; lat: number } | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
 
   useEffect(() => {
     startSession();
@@ -59,6 +63,16 @@ export default function TourPage() {
       if (data.success) {
         setSessionId(data.session.id);
         setProgression(data.progression);
+
+        // Fetch optimized route with instructions
+        if (zoneData.zone.route_geom) {
+          setRoute(zoneData.zone.route_geom);
+        }
+
+        // If we have route instructions, load them
+        if (zoneData.zone.route_instructions) {
+          setInstructions(zoneData.zone.route_instructions);
+        }
       } else {
         throw new Error(data.error || 'Erreur lors du démarrage de la tournée');
       }
@@ -72,6 +86,9 @@ export default function TourPage() {
 
   const handlePositionUpdate = async (lon: number, lat: number) => {
     if (!sessionId) return;
+
+    // Update current position for navigation
+    setCurrentPosition({ lon, lat });
 
     // Update position and check for segment completion
     try {
@@ -179,6 +196,13 @@ export default function TourPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className={voiceEnabled ? "btn btn-primary" : "btn btn-secondary"}
+                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                title={voiceEnabled ? "Désactiver le guidage vocal" : "Activer le guidage vocal"}
+              >
+                {voiceEnabled ? '🔊' : '🔇'} Voix
+              </button>
               {!paused ? (
                 <button className="btn btn-secondary" onClick={handlePause}>
                   ⏸ Pause
@@ -260,7 +284,15 @@ export default function TourPage() {
             <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
               {/* Left panel - Map and GPS */}
               <div>
-                <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                {/* Navigation Guide */}
+                <NavigationGuide
+                  instructions={instructions}
+                  currentPosition={currentPosition}
+                  route={route}
+                  voiceEnabled={voiceEnabled}
+                />
+
+                <div className="card" style={{ padding: '0', overflow: 'hidden', marginTop: '20px' }}>
                   <MapComponent
                     center={[2.3522, 48.8566]}
                     zoom={16}
@@ -275,6 +307,7 @@ export default function TourPage() {
                   onPositionUpdate={handlePositionUpdate}
                   route={route}
                   segments={progression?.segments}
+                  instructions={instructions}
                 />
               </div>
 

@@ -12,6 +12,7 @@ export interface TourPlayerProps {
   onSegmentDetected?: (segmentId: string) => void;
   route?: any; // GeoJSON LineString
   segments?: any[];
+  instructions?: any[]; // Turn-by-turn navigation instructions
 }
 
 export default function TourPlayer({
@@ -21,6 +22,7 @@ export default function TourPlayer({
   onSegmentDetected,
   route,
   segments,
+  instructions,
 }: TourPlayerProps) {
   const [watching, setWatching] = useState(false);
   const [position, setPosition] = useState<{ lon: number; lat: number } | null>(null);
