@@ -43,7 +43,7 @@ export default function Map({
 
     // Initialize map
     const map = L.map(containerRef.current, {
-      center: [center[1], center[0]], // Leaflet uses [lat, lon]
+      center: center, // center is already [lat, lon] format for Leaflet
       zoom,
       zoomControl: true,
     });
@@ -115,7 +115,7 @@ export default function Map({
   // Update center when prop changes
   useEffect(() => {
     if (mapRef.current && center) {
-      mapRef.current.setView([center[1], center[0]], zoom);
+      mapRef.current.setView(center, zoom); // center is already [lat, lon]
     }
   }, [center, zoom]);
 
