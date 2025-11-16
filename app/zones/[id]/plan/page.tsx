@@ -68,6 +68,13 @@ export default function ZonePlanPage() {
     loadZoneData();
   }, [zoneId]);
 
+  // Center map on zone when both map and zone are ready
+  useEffect(() => {
+    if (map && zone?.geom) {
+      fitBounds(map, zone.geom);
+    }
+  }, [map, zone]);
+
   const loadZoneData = async () => {
     try {
       setLoading(true);
@@ -79,7 +86,7 @@ export default function ZonePlanPage() {
         setSegments(data.segments);
         setStats(data.stats);
 
-        // Draw zone and segments on map
+        // Draw zone on map
         if (map && data.zone) {
           addGeoJSONLayer(map, data.zone.geom, {
             style: {
@@ -89,8 +96,7 @@ export default function ZonePlanPage() {
               fillOpacity: 0.1,
             },
           });
-
-          fitBounds(map, data.zone.geom);
+          // fitBounds is now handled by useEffect
         }
       } else {
         setError('Zone non trouvée');
