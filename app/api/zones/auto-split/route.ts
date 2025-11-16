@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
       }
       return sum + length;
     }, 0);
-    const totalDurationMinutes = Math.round((totalLength / 300) * 60);
+    // Estimate duration (assuming 1500m per hour for door-to-door in urban areas)
+    const totalDurationMinutes = Math.round((totalLength / 1500) * 60);
 
     // Determine number of zones needed
     const numZones = Math.ceil(totalDurationMinutes / targetDurationMinutes);
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
         }
         return sum + length;
       }, 0);
-      const zoneDuration = Math.round((zoneLength / 300) * 60);
+      const zoneDuration = Math.round((zoneLength / 1500) * 60);
 
       return {
         id: `zone_${index + 1}`,
