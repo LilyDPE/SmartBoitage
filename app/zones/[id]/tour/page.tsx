@@ -62,6 +62,43 @@ export default function TourPage() {
 
       setZone(zoneData.zone);
 
+      // Auto-optimize route if not already planned
+      if (!zoneData.zone.route_geom || !zoneData.zone.route_instructions) {
+        console.log('Zone not optimized yet, auto-optimizing...');
+
+        try {
+          const optimizeResponse = await fetch(`/api/zones/${zoneId}/planifier`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              profile: 'foot-walking',
+              saveToDb: true,
+            }),
+          });
+
+          const optimizeData = await optimizeResponse.json();
+
+          if (optimizeData.success) {
+            // Reload zone data to get the optimized route
+            const reloadResponse = await fetch(`/api/zones/${zoneId}/segments`);
+            const reloadData = await reloadResponse.json();
+
+            if (reloadData.success) {
+              setZone(reloadData.zone);
+              zoneData.zone = reloadData.zone; // Update for later use
+            }
+          } else {
+            console.warn('Auto-optimization failed:', optimizeData.error);
+            // Continue anyway - navigation will work without turn-by-turn instructions
+          }
+        } catch (err) {
+          console.warn('Auto-optimization error:', err);
+          // Continue anyway - navigation will work without turn-by-turn instructions
+        }
+      }
+
       // Start tour session
       const response = await fetch('/api/tour/start', {
         method: 'POST',

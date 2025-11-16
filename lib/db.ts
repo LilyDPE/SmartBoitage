@@ -71,7 +71,10 @@ export const db = {
   // Get zone by ID
   async getZone(zoneId: string) {
     const result = await query(
-      `SELECT id, nom, ST_AsGeoJSON(geom)::json as geom, created_at, updated_at
+      `SELECT id, nom, ST_AsGeoJSON(geom)::json as geom,
+              ST_AsGeoJSON(route_geom)::json as route_geom,
+              route_instructions,
+              created_at, updated_at
        FROM zones_boitage
        WHERE id = $1`,
       [zoneId]
