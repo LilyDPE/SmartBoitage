@@ -2,7 +2,6 @@
 
 // NavigationGuide Component - Turn-by-turn navigation with voice guidance
 import { useState, useEffect, useRef } from 'react';
-import { Position } from 'geojson';
 import { haversineDistance } from '@/lib/geo';
 
 export interface NavigationGuideProps {

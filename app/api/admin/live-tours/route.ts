@@ -1,12 +1,12 @@
 // API Route: Live Tour Tracking for Admin
 // GET /api/admin/live-tours - Fetch all active tours with real-time positions
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { query } from '@/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check admin authorization
     const session = await getServerSession(authOptions);
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all active tour sessions with user info and current position
-    const result = await db.query(
+    const result = await query(
       `SELECT
          s.id as session_id,
          s.zone_id,

@@ -22,7 +22,7 @@ export default function TourPlayer({
   onSegmentDetected,
   route,
   segments,
-  instructions,
+  instructions: _instructions,
 }: TourPlayerProps) {
   const [watching, setWatching] = useState(false);
   const [position, setPosition] = useState<{ lon: number; lat: number } | null>(null);

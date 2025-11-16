@@ -35,7 +35,7 @@ export default function Map({
 }: MapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mapReady, setMapReady] = useState(false);
+  const [_mapReady, setMapReady] = useState(false);
   const locationMarkerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {

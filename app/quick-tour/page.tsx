@@ -1,7 +1,7 @@
 'use client';
 
 // Quick Tour Page - Generate optimal tour based on available time
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type L from 'leaflet';

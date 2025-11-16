@@ -16,7 +16,7 @@ export default function QuickTourActivePage() {
   const [tour, setTour] = useState<any>(null);
   const [currentPosition, setCurrentPosition] = useState<{ lon: number; lat: number } | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [watching, setWatching] = useState(false);
+  const [_watching, setWatching] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());

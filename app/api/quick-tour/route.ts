@@ -2,7 +2,7 @@
 // POST /api/quick-tour - Generate optimal tour based on current location and available time
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { query } from '@/lib/db';
 import { haversineDistance } from '@/lib/geo';
 import { optimizeRoute } from '@/lib/ors';
 import { Position } from 'geojson';
@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
 
     for (const seg of segmentsWithDistance) {
       const segmentLength = seg.longueur_m || 0;
-      const estimatedTime = segmentLength / walkingSpeedMps;
 
       if (totalDistance + segmentLength < effectiveTimeSeconds * walkingSpeedMps) {
         selectedSegments.push(seg);
@@ -156,7 +155,7 @@ async function findNearbyUncompletedSegments(
   lat: number,
   radiusMeters: number
 ): Promise<any[]> {
-  const result = await db.query(
+  const result = await query(
     `SELECT
        s.id,
        s.zone_id,
