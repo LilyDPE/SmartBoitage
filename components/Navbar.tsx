@@ -1,6 +1,6 @@
 'use client';
 
-// Navigation bar with user menu
+// Navigation bar component with user menu and authentication
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-// NavigationGuide Component - Turn-by-turn navigation with voice guidance
+// NavigationGuide Component - Real-time turn-by-turn navigation with French voice guidance
 import { useState, useEffect, useRef } from 'react';
 import { haversineDistance } from '@/lib/geo';
 

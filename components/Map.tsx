@@ -1,6 +1,6 @@
 'use client';
 
-// Map Component - Leaflet-based interactive map
+// Map Component - Leaflet-based interactive map with GPS tracking
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
