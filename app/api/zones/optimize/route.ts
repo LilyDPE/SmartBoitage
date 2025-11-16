@@ -58,8 +58,9 @@ export async function POST(request: NextRequest) {
       return sum + length;
     }, 0);
 
-    // Estimate duration (assuming 300m per hour for door-to-door)
-    const estimatedDurationMinutes = Math.round((totalLength / 300) * 60);
+    // Estimate duration (assuming 1500m per hour for door-to-door in urban areas)
+    // This accounts for walking speed + time spent at each door
+    const estimatedDurationMinutes = Math.round((totalLength / 1500) * 60);
 
     // Check if zone is optimal (target: 1.5-2.5 hours)
     const targetMinMin = 90; // 1.5h
