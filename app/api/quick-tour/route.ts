@@ -172,8 +172,9 @@ async function findNearbyUncompletedSegments(
      FROM segments_rue s
      JOIN zones_boitage z ON z.id = s.zone_id
      LEFT JOIN streets st ON st.id = s.street_id
-     LEFT JOIN sessions ses ON ses.zone_id = s.zone_id AND ses.statut = 'en_cours'
+     LEFT JOIN sessions ses ON ses.zone_id = s.zone_id AND ses.ended_at IS NULL
      WHERE s.fait = false
+       AND ses.id IS NULL
        AND ST_DWithin(
          ST_Transform(s.geom, 3857),
          ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 3857),
