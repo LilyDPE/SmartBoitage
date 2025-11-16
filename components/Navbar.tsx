@@ -75,6 +75,22 @@ export default function Navbar() {
           </Link>
 
           <Link
+            href="/quick-tour"
+            style={{
+              color: '#666',
+              textDecoration: 'none',
+              padding: '8px 12px',
+              borderRadius: '5px',
+              transition: 'background 0.2s',
+              background: 'linear-gradient(90deg, #667eea15, #764ba215)',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'linear-gradient(90deg, #667eea30, #764ba230)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'linear-gradient(90deg, #667eea15, #764ba215)')}
+          >
+            ⚡ Micro-Tournée
+          </Link>
+
+          <Link
             href="/zones/create"
             style={{
               color: '#666',
