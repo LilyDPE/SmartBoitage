@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Get updated progression
     const progression = await db.getProgression(sessionId);
-    const completed = progression.filter((p) => p.fait).length;
+    const completed = progression.filter((p: any) => p.fait).length;
     const total = progression.length;
 
     // Get session stats
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     const progression = await db.getProgression(sessionId);
     const stats = await db.getSessionStats(sessionId);
 
-    const completed = progression.filter((p) => p.fait).length;
+    const completed = progression.filter((p: any) => p.fait).length;
     const total = progression.length;
 
     return NextResponse.json({
