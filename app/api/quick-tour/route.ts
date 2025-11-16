@@ -159,9 +159,9 @@ async function findNearbyUncompletedSegments(
     `SELECT
        s.id,
        s.zone_id,
-       s.street_nom,
+       st.nom as street_nom,
        s.cote,
-       s.longueur_m,
+       ST_Length(ST_Transform(s.geom, 3857)) as longueur_m,
        ST_AsGeoJSON(s.geom)::json as geom,
        ST_AsGeoJSON(ST_LineInterpolatePoint(s.geom, 0.5))::json as midpoint_geom,
        ST_Distance(
@@ -169,8 +169,9 @@ async function findNearbyUncompletedSegments(
          ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 3857)
        ) as distance_m,
        z.nom as zone_nom
-     FROM segments s
-     JOIN zones z ON z.id = s.zone_id
+     FROM segments_rue s
+     JOIN zones_boitage z ON z.id = s.zone_id
+     LEFT JOIN streets st ON st.id = s.street_id
      LEFT JOIN sessions ses ON ses.zone_id = s.zone_id AND ses.statut = 'en_cours'
      WHERE s.fait = false
        AND ST_DWithin(

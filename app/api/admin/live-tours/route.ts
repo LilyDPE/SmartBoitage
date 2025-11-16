@@ -40,13 +40,13 @@ export async function GET() {
          u.email as user_email,
          u.role as user_role,
          -- Count segments
-         (SELECT COUNT(*) FROM segments seg WHERE seg.zone_id = s.zone_id) as total_segments,
-         (SELECT COUNT(*) FROM segments seg WHERE seg.zone_id = s.zone_id AND seg.fait = true) as completed_segments,
+         (SELECT COUNT(*) FROM segments_rue seg WHERE seg.zone_id = s.zone_id) as total_segments,
+         (SELECT COUNT(*) FROM segments_rue seg WHERE seg.zone_id = s.zone_id AND seg.fait = true) as completed_segments,
          -- Get last position coordinates
          ST_X(s.derniere_position) as lon,
          ST_Y(s.derniere_position) as lat
        FROM sessions s
-       JOIN zones z ON z.id = s.zone_id
+       JOIN zones_boitage z ON z.id = s.zone_id
        JOIN users u ON u.id = s.user_id
        WHERE s.statut = 'en_cours'
        ORDER BY s.debut DESC`

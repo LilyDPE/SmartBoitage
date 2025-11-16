@@ -33,6 +33,21 @@ export default function TourPage() {
     startSession();
   }, [zoneId]);
 
+  // Center map on zone when zone data and map are ready
+  useEffect(() => {
+    if (map && zone?.geom?.coordinates?.[0]?.[0]) {
+      const coords = zone.geom.coordinates[0];
+      // Calculate bounds from all coordinates
+      const lats = coords.map((c: number[]) => c[1]);
+      const lons = coords.map((c: number[]) => c[0]);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lats), Math.min(...lons)],
+        [Math.max(...lats), Math.max(...lons)]
+      ];
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [map, zone]);
+
   const startSession = async () => {
     try {
       setLoading(true);
@@ -294,10 +309,14 @@ export default function TourPage() {
 
                 <div className="card" style={{ padding: '0', overflow: 'hidden', marginTop: '20px' }}>
                   <MapComponent
-                    center={[2.3522, 48.8566]}
-                    zoom={16}
+                    center={zone?.geom?.coordinates?.[0]?.[0] ? [
+                      zone.geom.coordinates[0][0][1], // lat
+                      zone.geom.coordinates[0][0][0]  // lon
+                    ] : [50.05, 1.55]} // Default: Nord de la France
+                    zoom={15}
                     style={{ width: '100%', height: '600px' }}
                     onMapReady={setMap}
+                    autoGeolocate={true}
                   />
                 </div>
 
