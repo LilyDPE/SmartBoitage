@@ -4,6 +4,27 @@ const nextConfig = {
 
   // Webpack configuration
   webpack: (config, { isServer }) => {
+    const path = require('path');
+
+    // Add path aliases to match tsconfig.json
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+      '@/components': path.resolve(__dirname, 'components'),
+      '@/lib': path.resolve(__dirname, 'lib'),
+      '@/app': path.resolve(__dirname, 'app'),
+    };
+
+    // Add extensions for module resolution
+    config.resolve.extensions = [
+      '.tsx',
+      '.ts',
+      '.jsx',
+      '.js',
+      '.json',
+      ...config.resolve.extensions,
+    ];
+
     // Fix for Leaflet in Next.js
     if (!isServer) {
       config.resolve.fallback = {
