@@ -73,6 +73,11 @@ export default function AdminDashboard() {
                 👥 Utilisateurs
               </button>
             </Link>
+            <Link href="/admin/live-tours">
+              <button className="btn btn-primary" style={{ marginRight: '10px' }}>
+                📍 Suivi en direct
+              </button>
+            </Link>
             <Link href="/admin/history">
               <button className="btn btn-primary">
                 📊 Historique
