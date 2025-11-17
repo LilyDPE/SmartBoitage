@@ -329,7 +329,7 @@ export const db = {
   async saveRoute(zoneId: string, geom: any, waypoints: any[], distanceM: number, durationS: number, instructions?: any[]) {
     // Try to update zone with route info and instructions
     await query(
-      `UPDATE zones
+      `UPDATE zones_boitage
        SET route_geom = ST_GeomFromGeoJSON($1),
            route_instructions = $2,
            updated_at = NOW()
