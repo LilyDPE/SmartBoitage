@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
@@ -9,17 +9,18 @@ export const metadata: Metadata = {
   title: 'SmartBoitage PRO',
   description: 'Application professionnelle de gestion de tournées de distribution',
   manifest: '/manifest.json',
-  themeColor: '#3388ff',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'SmartBoitage PRO',
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#3388ff',
 };
 
 export default async function RootLayout({
