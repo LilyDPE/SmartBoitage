@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
     console.log(`Found ${nearbySegments.length} nearby segments`);
 
     // Step 2: Calculate how many segments fit in the available time
-    // Walking speed: 2500m/h for door-to-door
-    const walkingSpeedMps = 2500 / 3600; // meters per second
+    // Walking speed: 4500m/h for realistic door-to-door distribution
+    const walkingSpeedMps = 4500 / 3600; // meters per second (~1.25 m/s)
     const availableTimeSeconds = durationMinutes * 60;
 
     // Reserve 20% for walking between segments and returning to start
@@ -173,7 +173,7 @@ async function findNearbyUncompletedSegments(
      JOIN zones_boitage z ON z.id = s.zone_id
      LEFT JOIN streets st ON st.id = s.street_id
      LEFT JOIN sessions ses ON ses.zone_id = s.zone_id AND ses.ended_at IS NULL
-     WHERE s.fait = false
+     WHERE (s.statut IS NULL OR s.statut != 'fait')
        AND ses.id IS NULL
        AND ST_DWithin(
          ST_Transform(s.geom, 3857),
