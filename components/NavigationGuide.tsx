@@ -73,8 +73,9 @@ export default function NavigationGuide({
       remainingDistance += instructions[i].distance || 0;
     }
 
-    // Estimate time based on walking speed (2500m/h for door-to-door)
-    const walkingSpeedMps = 2500 / 3600; // meters per second
+    // Estimate time based on realistic door-to-door distribution speed (4500m/h)
+    // This accounts for walking + brief stops at each door
+    const walkingSpeedMps = 4500 / 3600; // meters per second (~1.25 m/s)
     const estimatedSeconds = remainingDistance / walkingSpeedMps;
     setEta(estimatedSeconds);
 
