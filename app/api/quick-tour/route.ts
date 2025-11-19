@@ -193,7 +193,7 @@ async function generateOptimizedTour(
   startLon: number,
   startLat: number,
   segments: any[],
-  profile: string,
+  profile: 'driving-car' | 'foot-walking' | 'cycling-regular',
   label: string
 ): Promise<any> {
   if (segments.length === 0) {
