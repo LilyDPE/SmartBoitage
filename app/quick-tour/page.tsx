@@ -16,9 +16,11 @@ export default function QuickTourPage() {
   const [locating, setLocating] = useState(false);
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [customDuration, setCustomDuration] = useState('');
+  const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tour, setTour] = useState<any>(null);
+  const [tours, setTours] = useState<any[] | null>(null);
   const [stats, setStats] = useState<any>(null);
 
   // Preset durations
@@ -76,6 +78,7 @@ export default function QuickTourPage() {
     setGenerating(true);
     setError(null);
     setTour(null);
+    setTours(null);
 
     try {
       const response = await fetch('/api/quick-tour', {
@@ -85,6 +88,7 @@ export default function QuickTourPage() {
           lon: position.lon,
           lat: position.lat,
           durationMinutes,
+          numberOfPeople,
         }),
       });
 
@@ -94,11 +98,15 @@ export default function QuickTourPage() {
         throw new Error(data.message || data.error || 'Erreur lors de la génération');
       }
 
-      setTour(data.tour);
+      if (data.numberOfPeople === 2) {
+        setTours(data.tours);
+      } else {
+        setTour(data.tour);
+      }
       setStats(data.stats);
 
-      // Draw route on map
-      if (map && data.tour.route) {
+      // Draw route(s) on map
+      if (map) {
         const L = require('leaflet');
 
         // Clear previous layers
@@ -110,37 +118,76 @@ export default function QuickTourPage() {
           }
         });
 
-        // Draw route
-        const routeLayer = L.geoJSON(data.tour.route, {
-          style: {
-            color: '#667eea',
-            weight: 4,
-            opacity: 0.8,
-          },
-        }).addTo(map);
+        // Handle 2-person mode
+        if (data.numberOfPeople === 2 && data.tours) {
+          const colors = ['#667eea', '#f093fb']; // Different colors for each person
 
-        // Draw segment markers
-        if (data.tour.segments) {
-          data.tour.segments.forEach((seg: any, idx: number) => {
-            if (seg.geom && seg.geom.coordinates) {
-              // Draw segment
-              L.geoJSON(seg.geom, {
-                style: {
-                  color: '#4caf50',
-                  weight: 3,
-                  opacity: 0.6,
-                },
-              }).addTo(map).bindPopup(`
-                <strong>${idx + 1}. ${seg.street_nom || 'Sans nom'}</strong><br/>
-                Côté: ${seg.cote}<br/>
-                ${Math.round(seg.longueur_m)} m
-              `);
+          data.tours.forEach((tourData: any, tourIdx: number) => {
+            if (!tourData.route) return;
+
+            // Draw route
+            const routeLayer = L.geoJSON(tourData.route, {
+              style: {
+                color: colors[tourIdx],
+                weight: 4,
+                opacity: 0.8,
+              },
+            }).addTo(map).bindPopup(tourData.label);
+
+            // Draw segment markers
+            if (tourData.segments) {
+              tourData.segments.forEach((seg: any, idx: number) => {
+                if (seg.geom && seg.geom.coordinates) {
+                  L.geoJSON(seg.geom, {
+                    style: {
+                      color: colors[tourIdx],
+                      weight: 3,
+                      opacity: 0.6,
+                    },
+                  }).addTo(map).bindPopup(`
+                    <strong>${tourData.label}</strong><br/>
+                    ${idx + 1}. ${seg.street_nom || 'Sans nom'}<br/>
+                    Côté: ${seg.cote}<br/>
+                    ${Math.round(seg.longueur_m)} m
+                  `);
+                }
+              });
             }
           });
         }
+        // Single person mode
+        else if (data.tour && data.tour.route) {
+          // Draw route
+          const routeLayer = L.geoJSON(data.tour.route, {
+            style: {
+              color: '#667eea',
+              weight: 4,
+              opacity: 0.8,
+            },
+          }).addTo(map);
 
-        // Fit map to route
-        map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+          // Draw segment markers
+          if (data.tour.segments) {
+            data.tour.segments.forEach((seg: any, idx: number) => {
+              if (seg.geom && seg.geom.coordinates) {
+                L.geoJSON(seg.geom, {
+                  style: {
+                    color: '#4caf50',
+                    weight: 3,
+                    opacity: 0.6,
+                  },
+                }).addTo(map).bindPopup(`
+                  <strong>${idx + 1}. ${seg.street_nom || 'Sans nom'}</strong><br/>
+                  Côté: ${seg.cote}<br/>
+                  ${Math.round(seg.longueur_m)} m
+                `);
+              }
+            });
+          }
+
+          // Fit map to route
+          map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+        }
       }
     } catch (err: any) {
       console.error('Error generating tour:', err);
@@ -223,10 +270,31 @@ export default function QuickTourPage() {
                 )}
               </div>
 
-              {/* Step 2: Choose duration */}
+              {/* Step 2: Number of people */}
               <div style={{ marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>
-                  2️⃣ Temps disponible
+                  2️⃣ Nombre de personnes
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <button
+                    className={numberOfPeople === 1 ? 'btn btn-primary' : 'btn btn-secondary'}
+                    onClick={() => setNumberOfPeople(1)}
+                  >
+                    👤 Seul
+                  </button>
+                  <button
+                    className={numberOfPeople === 2 ? 'btn btn-primary' : 'btn btn-secondary'}
+                    onClick={() => setNumberOfPeople(2)}
+                  >
+                    👥 À deux
+                  </button>
+                </div>
+              </div>
+
+              {/* Step 3: Choose duration */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>
+                  3️⃣ Temps disponible
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -263,7 +331,7 @@ export default function QuickTourPage() {
                 </div>
               </div>
 
-              {/* Step 3: Generate */}
+              {/* Step 4: Generate */}
               <button
                 className="btn btn-primary"
                 onClick={handleGenerateTour}
@@ -288,7 +356,7 @@ export default function QuickTourPage() {
                 </div>
               )}
 
-              {stats && (
+              {stats && numberOfPeople === 1 && (
                 <div
                   style={{
                     marginTop: '20px',
@@ -319,6 +387,44 @@ export default function QuickTourPage() {
                   >
                     ▶️ Démarrer la tournée
                   </button>
+                </div>
+              )}
+
+              {stats && numberOfPeople === 2 && tours && (
+                <div
+                  style={{
+                    marginTop: '20px',
+                    padding: '15px',
+                    background: '#e3f2fd',
+                    borderRadius: '5px',
+                  }}
+                >
+                  <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>
+                    📊 Statistiques (2 personnes)
+                  </h3>
+                  <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
+                    <div><strong>Total segments :</strong> {stats.totalSegments}</div>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #ddd' }}>
+                      <div style={{ color: '#667eea', fontWeight: 'bold' }}>👤 Personne 1 (Côté pair)</div>
+                      <div><strong>Segments :</strong> {stats.tour1Segments}</div>
+                      {tours[0] && (
+                        <>
+                          <div><strong>Distance :</strong> {tours[0].stats.totalDistance}</div>
+                          <div><strong>Durée :</strong> {tours[0].stats.totalDuration}</div>
+                        </>
+                      )}
+                    </div>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #ddd' }}>
+                      <div style={{ color: '#f093fb', fontWeight: 'bold' }}>👤 Personne 2 (Côté impair)</div>
+                      <div><strong>Segments :</strong> {stats.tour2Segments}</div>
+                      {tours[1] && (
+                        <>
+                          <div><strong>Distance :</strong> {tours[1].stats.totalDistance}</div>
+                          <div><strong>Durée :</strong> {tours[1].stats.totalDuration}</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

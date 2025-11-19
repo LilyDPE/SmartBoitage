@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       durationMinutes = 60, // Default: 1 hour
       maxRadius = 2000, // Search radius in meters (default: 2km)
       profile = 'foot-walking',
+      numberOfPeople = 1, // Number of people doing the tour (1 or 2)
     } = body;
 
     if (!lon || !lat) {
@@ -41,8 +42,8 @@ export async function POST(request: NextRequest) {
     console.log(`Found ${nearbySegments.length} nearby segments`);
 
     // Step 2: Calculate how many segments fit in the available time
-    // Walking speed: 2500m/h for door-to-door
-    const walkingSpeedMps = 2500 / 3600; // meters per second
+    // Walking speed: 4500m/h for realistic door-to-door distribution
+    const walkingSpeedMps = 4500 / 3600; // meters per second (~1.25 m/s)
     const availableTimeSeconds = durationMinutes * 60;
 
     // Reserve 20% for walking between segments and returning to start
@@ -83,6 +84,43 @@ export async function POST(request: NextRequest) {
 
     console.log(`Selected ${selectedSegments.length} segments for ${durationMinutes}min tour`);
 
+    // Handle 2-person mode: split segments into pair/impair
+    if (numberOfPeople === 2) {
+      // Split segments by side (pair/impair)
+      const pairSegments = selectedSegments.filter(seg => seg.cote === 'pair');
+      const impairSegments = selectedSegments.filter(seg => seg.cote === 'impair');
+      const bothSegments = selectedSegments.filter(seg => seg.cote === 'both');
+
+      // Distribute "both" segments evenly
+      bothSegments.forEach((seg, idx) => {
+        if (idx % 2 === 0) {
+          pairSegments.push(seg);
+        } else {
+          impairSegments.push(seg);
+        }
+      });
+
+      // Generate 2 separate optimized routes
+      const tours = await Promise.all([
+        generateOptimizedTour(lon, lat, pairSegments, profile, 'Personne 1 (Côté pair)'),
+        generateOptimizedTour(lon, lat, impairSegments, profile, 'Personne 2 (Côté impair)')
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        numberOfPeople: 2,
+        tours: tours,
+        stats: {
+          totalSegments: selectedSegments.length,
+          tour1Segments: pairSegments.length,
+          tour2Segments: impairSegments.length,
+          requestedDuration: `${durationMinutes} min`,
+        },
+        message: `2 itinéraires générés : ${pairSegments.length} segments (pair) et ${impairSegments.length} segments (impair)`,
+      });
+    }
+
+    // Single person mode (original behavior)
     // Step 3: Create waypoints (start + segment midpoints + return to start)
     const waypoints: Position[] = [[lon, lat]]; // Start point
 
@@ -119,6 +157,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      numberOfPeople: 1,
       tour: {
         startPoint: [lon, lat],
         segments: orderedSegments,
@@ -148,6 +187,67 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Generate an optimized tour for a given set of segments
+ */
+async function generateOptimizedTour(
+  startLon: number,
+  startLat: number,
+  segments: any[],
+  profile: string,
+  label: string
+): Promise<any> {
+  if (segments.length === 0) {
+    return {
+      label,
+      startPoint: [startLon, startLat],
+      segments: [],
+      route: null,
+      instructions: [],
+      waypoints: [],
+      stats: {
+        segmentCount: 0,
+        totalDistance: '0 km',
+        totalDuration: '0 min',
+      },
+    };
+  }
+
+  // Create waypoints
+  const waypoints: Position[] = [[startLon, startLat]];
+  for (const seg of segments) {
+    waypoints.push(seg.midpoint);
+  }
+  waypoints.push([startLon, startLat]); // Return to start
+
+  // Optimize route
+  const optimizedRoute = await optimizeRoute(waypoints, profile, 0);
+
+  // Calculate stats
+  const totalDurationMinutes = Math.round(optimizedRoute.totalDuration / 60);
+  const totalDistanceKm = (optimizedRoute.totalDistance / 1000).toFixed(2);
+
+  // Map optimized order back to segments
+  const orderedSegments = optimizedRoute.segmentOrder
+    .slice(1, -1)
+    .map((idx) => segments[idx - 1])
+    .filter(Boolean);
+
+  return {
+    label,
+    startPoint: [startLon, startLat],
+    segments: orderedSegments,
+    route: optimizedRoute.route,
+    instructions: optimizedRoute.instructions,
+    waypoints: optimizedRoute.orderedWaypoints,
+    stats: {
+      segmentCount: orderedSegments.length,
+      totalDistance: `${totalDistanceKm} km`,
+      totalDuration: `${totalDurationMinutes} min`,
+    },
+  };
+}
+
+/**
  * Find uncompleted segments within radius of a point
  */
 async function findNearbyUncompletedSegments(
@@ -173,7 +273,7 @@ async function findNearbyUncompletedSegments(
      JOIN zones_boitage z ON z.id = s.zone_id
      LEFT JOIN streets st ON st.id = s.street_id
      LEFT JOIN sessions ses ON ses.zone_id = s.zone_id AND ses.ended_at IS NULL
-     WHERE s.fait = false
+     WHERE (s.statut IS NULL OR s.statut != 'fait')
        AND ses.id IS NULL
        AND ST_DWithin(
          ST_Transform(s.geom, 3857),
