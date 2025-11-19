@@ -7,6 +7,9 @@ const pool = new Pool({
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
+  ssl: {
+    rejectUnauthorized: false // Required for Supabase SSL connections
+  },
 });
 
 // Connection error handling
